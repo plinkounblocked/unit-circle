@@ -75,7 +75,7 @@
         @keyframes goldShimmer { 0%, 100% { box-shadow: 0 0 22px rgba(245, 158, 11, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.2); } 50% { box-shadow: 0 0 32px rgba(251, 191, 36, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.3); } }
 
         /* --- Open-ended input --- */
-        .open-input { width: 100%; padding: 1.1rem 1rem; font-size: 1.75rem; font-weight: 800; text-align: center; color: white; background: rgb(15, 23, 42); border: 2px solid rgb(71, 85, 105); border-radius: 0.75rem; font-family: ui-monospace, 'SF Mono', Menlo, monospace; outline: none; transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+        .open-input { width: 100%; padding: 1.1rem 1rem; font-size: 1.75rem; font-weight: 800; text-align: center; color: white; background: rgb(15, 23, 42); border: 2px solid rgb(71, 85, 105); border-radius: 0.75rem; font-family: ui-monospace, 'SF Mono', Menlo, monospace; outline: none; transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease; }
         .open-input:focus { border-color: rgb(56, 189, 248); box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15); }
         .open-input.input-correct { border-color: rgb(74, 222, 128); background: rgba(34, 197, 94, 0.12); color: rgb(187, 247, 208); animation: correctPulse 0.55s cubic-bezier(0.34, 1.56, 0.64, 1); }
         .open-input.input-wrong { border-color: rgb(248, 113, 113); background: rgba(239, 68, 68, 0.08); color: rgb(254, 202, 202); animation: wrongShake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
@@ -83,16 +83,18 @@
         .open-correct-reveal { color: rgb(74, 222, 128); font-weight: 700; }
 
         /* --- On-screen keypad for open-ended answers --- */
-        .open-keypad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.4rem; margin-top: 0.85rem; }
+        .open-keypad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.4rem; margin-top: 0.85rem; touch-action: none; }
         .open-keypad.pad-locked { opacity: 0.4; pointer-events: none; }
         .kp-btn { padding: 0.85rem 0.5rem; font-size: 1.05rem; font-weight: 700; color: rgb(226, 232, 240); background: rgb(30, 41, 59); border: 1px solid rgb(51, 65, 85); border-radius: 0.5rem; cursor: pointer; font-family: ui-monospace, 'SF Mono', Menlo, monospace; transition: background-color 0.12s ease, transform 0.08s ease, border-color 0.12s ease; user-select: none; -webkit-tap-highlight-color: transparent; }
-        .kp-btn:hover { background: rgb(51, 65, 85); border-color: rgb(71, 85, 105); }
-        .kp-btn:active { transform: scale(0.95); background: rgb(71, 85, 105); }
+        
+        /* Instant manual active state for raw pointer events */
+        .kp-active { transform: scale(0.95) !important; background: rgb(71, 85, 105) !important; }
+        .kp-submit.kp-active { background: linear-gradient(to right, rgb(56, 189, 248), rgb(99, 102, 241)) !important; box-shadow: 0 0 18px rgba(14, 165, 233, 0.4) !important; }
+
         .kp-symbol { color: rgb(252, 211, 77); font-family: 'Inter', sans-serif; font-weight: 800; }
         .kp-back { color: rgb(248, 113, 113); }
         .kp-dne { color: rgb(148, 163, 184); font-size: 0.8rem; letter-spacing: 0.05em; font-family: 'Inter', sans-serif; }
         .kp-submit { grid-column: span 4; background: linear-gradient(to right, rgb(14, 165, 233), rgb(79, 70, 229)); color: white; padding: 0.95rem; font-size: 1rem; font-family: 'Inter', sans-serif; font-weight: 800; letter-spacing: 0.05em; border-color: rgb(56, 189, 248); box-shadow: 0 0 14px rgba(14, 165, 233, 0.25); }
-        .kp-submit:hover { background: linear-gradient(to right, rgb(56, 189, 248), rgb(99, 102, 241)); box-shadow: 0 0 18px rgba(14, 165, 233, 0.4); }
 
         /* --- Graph SVG plot --- */
         .graph-plot { width: 100%; height: auto; max-height: 240px; background: rgb(15, 23, 42); border: 1px solid rgb(51, 65, 85); border-radius: 0.5rem; }
@@ -280,7 +282,7 @@
 
                 <div class="bg-slate-800/80 rounded-xl p-4 border border-slate-700 text-xs text-slate-400 leading-relaxed text-center">
                     <span class="text-amber-400 font-bold block mb-1">💡 Pro Tip</span> 
-                    Your answer mode is chosen on the main screen. In <span class="text-slate-300 font-medium">Open Ended</span> mode, type <span class="font-mono bg-slate-900 px-1.5 py-0.5 rounded text-amber-200">r</span> for √ and <span class="font-mono bg-slate-900 px-1.5 py-0.5 rounded text-amber-200">p</span> for π.
+                    Your answer mode is chosen on the main screen. In <span class="text-slate-300 font-medium">Open Ended</span> mode, type <span class="font-mono bg-slate-900 px-1.5 py-0.5 rounded text-amber-200">r</span> for √ and <span class="font-mono bg-slate-900 px-1.5 py-0.5 rounded text-amber-200">pi</span> for π.
                 </div>
 
                 <div class="grid grid-cols-1 gap-3 pt-2">
@@ -294,13 +296,13 @@
             </div>
         </div>
 
-        <div id="view-game" class="p-6 hidden flex-col h-full">
+        <div id="view-game" class="p-6 hidden flex-col h-full min-h-[450px]">
             <div class="flex justify-between items-center mb-8">
                 <div id="game-progress" class="text-slate-400 font-semibold tracking-wide">Q: 1</div>
                 <div id="game-timer" class="text-xl font-mono font-bold text-sky-400 bg-slate-900 px-4 py-1 rounded-lg border border-slate-700">00:00</div>
             </div>
 
-            <div id="question-stage" class="flex-1 flex flex-col justify-center items-center py-6">
+            <div id="question-stage" class="flex-1 flex flex-col justify-center items-center py-6 w-full">
                 <div id="graph-image" class="w-full mb-4 hidden"></div>
                 <div id="question-text" class="text-4xl font-extrabold tracking-tight mb-6 text-center px-2">tan(5π/4)</div>
 
@@ -309,29 +311,29 @@
 
                 <div id="open-area" class="w-full hidden">
                     <input type="text" id="open-input" class="open-input" placeholder="type answer..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="none">
-                    <div id="open-meta" class="open-meta">Tap the keypad below · or type <span class="text-amber-300 font-bold">r</span> for √, <span class="text-amber-300 font-bold">p</span> for π</div>
+                    <div id="open-meta" class="open-meta">Tap the keypad below · or type <span class="text-amber-300 font-bold">r</span> for √, <span class="text-amber-300 font-bold">pi</span> for π</div>
                     <div id="open-keypad" class="open-keypad hidden">
-                        <button type="button" onmousedown="event.preventDefault()" onclick="padPress('7')" class="kp-btn">7</button>
-                        <button type="button" onmousedown="event.preventDefault()" onclick="padPress('8')" class="kp-btn">8</button>
-                        <button type="button" onmousedown="event.preventDefault()" onclick="padPress('9')" class="kp-btn">9</button>
-                        <button type="button" onmousedown="event.preventDefault()" onclick="padBackspace()" class="kp-btn kp-back">⌫</button>
+                        <button type="button" onpointerdown="handlePad(event, 'press', '7')" class="kp-btn">7</button>
+                        <button type="button" onpointerdown="handlePad(event, 'press', '8')" class="kp-btn">8</button>
+                        <button type="button" onpointerdown="handlePad(event, 'press', '9')" class="kp-btn">9</button>
+                        <button type="button" onpointerdown="handlePad(event, 'back')" class="kp-btn kp-back">⌫</button>
 
-                        <button type="button" onmousedown="event.preventDefault()" onclick="padPress('4')" class="kp-btn">4</button>
-                        <button type="button" onmousedown="event.preventDefault()" onclick="padPress('5')" class="kp-btn">5</button>
-                        <button type="button" onmousedown="event.preventDefault()" onclick="padPress('6')" class="kp-btn">6</button>
-                        <button type="button" onmousedown="event.preventDefault()" onclick="padPress('/')" class="kp-btn kp-symbol">/</button>
+                        <button type="button" onpointerdown="handlePad(event, 'press', '4')" class="kp-btn">4</button>
+                        <button type="button" onpointerdown="handlePad(event, 'press', '5')" class="kp-btn">5</button>
+                        <button type="button" onpointerdown="handlePad(event, 'press', '6')" class="kp-btn">6</button>
+                        <button type="button" onpointerdown="handlePad(event, 'press', '/')" class="kp-btn kp-symbol">/</button>
 
-                        <button type="button" onmousedown="event.preventDefault()" onclick="padPress('1')" class="kp-btn">1</button>
-                        <button type="button" onmousedown="event.preventDefault()" onclick="padPress('2')" class="kp-btn">2</button>
-                        <button type="button" onmousedown="event.preventDefault()" onclick="padPress('3')" class="kp-btn">3</button>
-                        <button type="button" onmousedown="event.preventDefault()" onclick="padPress('-')" class="kp-btn kp-symbol">−</button>
+                        <button type="button" onpointerdown="handlePad(event, 'press', '1')" class="kp-btn">1</button>
+                        <button type="button" onpointerdown="handlePad(event, 'press', '2')" class="kp-btn">2</button>
+                        <button type="button" onpointerdown="handlePad(event, 'press', '3')" class="kp-btn">3</button>
+                        <button type="button" onpointerdown="handlePad(event, 'press', '-')" class="kp-btn kp-symbol">−</button>
 
-                        <button type="button" onmousedown="event.preventDefault()" onclick="padPress('√')" class="kp-btn kp-symbol">√</button>
-                        <button type="button" onmousedown="event.preventDefault()" onclick="padPress('0')" class="kp-btn">0</button>
-                        <button type="button" onmousedown="event.preventDefault()" onclick="padPress('π')" class="kp-btn kp-symbol">π</button>
-                        <button type="button" onmousedown="event.preventDefault()" onclick="padInsertWord('DNE')" class="kp-btn kp-dne">DNE</button>
+                        <button type="button" onpointerdown="handlePad(event, 'press', '√')" class="kp-btn kp-symbol">√</button>
+                        <button type="button" onpointerdown="handlePad(event, 'press', '0')" class="kp-btn">0</button>
+                        <button type="button" onpointerdown="handlePad(event, 'press', 'π')" class="kp-btn kp-symbol">π</button>
+                        <button type="button" onpointerdown="handlePad(event, 'press', 'DNE')" class="kp-btn kp-dne">DNE</button>
 
-                        <button type="button" onmousedown="event.preventDefault()" onclick="submitOpenAnswer()" class="kp-btn kp-submit">Submit ✓</button>
+                        <button type="button" onpointerdown="handlePad(event, 'submit')" class="kp-btn kp-submit">Submit ✓</button>
                     </div>
                 </div>
             </div>
@@ -362,7 +364,7 @@
             </div>
 
             <div class="mb-6">
-                <h3 class="text-slate-400 font-bold uppercase tracking-wider text-xs mb-3">Engelhart Post-Game Review</h3>
+                <h3 class="text-slate-400 font-bold uppercase tracking-wider text-xs mb-3">Post-Game Review</h3>
                 <div id="mistakes-list" class="space-y-2 max-h-48 overflow-y-auto pr-2">
                 </div>
             </div>
@@ -377,7 +379,6 @@
     </div>
 
     <script>
-        /* --- OS DETECTION --- */
         const isMobileOS = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
         /* --- MATH & UNIT CIRCLE ENGINE --- */
@@ -391,7 +392,6 @@
 
         const baseAngles = [0, 30, 45, 60, 90, 120, 135, 150, 180, 210, 225, 240, 270, 300, 315, 330, 360];
 
-        // Strategic distractor packages
         const optionFamilies = [
             ['√3/3', '-√3/3', '√3', '-√3'],
             ['1/2', '-1/2', '√3/2', '-√3/2', '2', '-2', '2√3/3', '-2√3/3'],
@@ -399,7 +399,6 @@
             ['0', 'Undefined', '1', '-1']
         ];
         
-        // Graph mode distractor packages
         const graphOptionFamilies = [
             ['1', '-1', '2', '-2', '3', '-3', '0', '4', '1/2', '-1/2'],
             ['π', '2π', '3π', '4π', 'π/2', 'π/3', '2π/3', '3π/2', 'π/4'],
@@ -454,7 +453,6 @@
             return array;
         }
 
-        /* --- HINT ENGINE for mistake review --- */
         function getQuadrantInfo(deg) {
             const norm = ((deg % 360) + 360) % 360;
             if (norm === 0 || norm === 180 || norm === 360) return { quad: null, axis: 'x' };
@@ -558,7 +556,6 @@
             return lines;
         }
 
-        /* --- GRAPH MODE hint engine (during play) and mistake tip engine (post-game) --- */
         function classifyGraphQuestion(qText) {
             const t = (qText || '').toLowerCase();
             if (t.includes('amplitude'))   return 'amplitude';
@@ -668,12 +665,11 @@
         }
 
         function accColor(pct) {
-            if (pct >= 90) return 'rgb(74, 222, 128)';   // green
-            if (pct >= 70) return 'rgb(250, 204, 21)';   // amber
-            return 'rgb(248, 113, 113)';                  // red
+            if (pct >= 90) return 'rgb(74, 222, 128)'; 
+            if (pct >= 70) return 'rgb(250, 204, 21)'; 
+            return 'rgb(248, 113, 113)';                
         }
 
-        // Updated viewBox layout to ensure no clipped text on labels
         function buildUnitCircleSvg(deg) {
             const norm = ((deg % 360) + 360) % 360;
             const rad = norm * Math.PI / 180;
@@ -745,14 +741,12 @@
 
             oscillator.type = type;
             oscillator.frequency.setValueAtTime(freq, audioCtx.currentTime + delay);
-
             gainNode.gain.setValueAtTime(0, audioCtx.currentTime + delay);
             gainNode.gain.linearRampToValueAtTime(vol, audioCtx.currentTime + delay + 0.01);
             gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + delay + duration);
 
             oscillator.connect(gainNode);
             gainNode.connect(audioCtx.destination);
-
             oscillator.start(audioCtx.currentTime + delay);
             oscillator.stop(audioCtx.currentTime + delay + duration);
         }
@@ -901,7 +895,7 @@
             if (drillSet) {
                 subtitleEl.innerText = 'Targeted Practice';
             } else {
-                subtitleEl.innerText = mode === 'speed' ? 'Speed Round' : 'Unlimited Practice';
+                subtitleEl.innerText = mode === 'speed' ? 'Speed Round Quiz' : 'Unlimited Practice';
             }
 
             clearInterval(state.interval);
@@ -937,14 +931,17 @@
 
         function renderProgress() {
             const el = document.getElementById('game-progress');
-            const streakHtml = (state.streak > 0 && state.mode !== 'speed')
-                ? `<span class="streak-badge${state.streak >= 5 ? ' streak-hot' : ''}">🔥 ${state.streak}</span>`
-                : '';
-                
+            
             if (state.mode === 'speed') {
-                el.innerHTML = `Q: ${state.history.length + 1} / ${state.targetCount}${streakHtml}`;
+                // Keep it completely neutral during speed round
+                el.innerHTML = `Q: ${state.history.length + 1} / ${state.targetCount}`;
                 return;
             }
+
+            const streakHtml = (state.streak > 0)
+                ? `<span class="streak-badge${state.streak >= 5 ? ' streak-hot' : ''}">🔥 ${state.streak}</span>`
+                : '';
+            
             const total = state.history.length;
             const correct = state.history.filter(h => h.isRight).length;
             const pct = total === 0 ? 0 : Math.round((correct / total) * 100);
@@ -1041,8 +1038,8 @@
             if (/^undefined$/i.test(t) || /^und(ef)?$/i.test(t) || /^dne$/i.test(t)) return 'Undefined';
             t = t.replace(/sqrt\s*\(?\s*/gi, '√');
             t = t.replace(/\)/g, '');
-            t = t.replace(/r/gi, '√');
-            t = t.replace(/p/gi, 'π');
+            t = t.replace(/r/g, '√').replace(/R/g, '√');
+            t = t.replace(/pi/gi, 'π');
             t = t.replace(/\s+/g, '');
             if (t.startsWith('+')) t = t.slice(1);
             return t;
@@ -1055,11 +1052,30 @@
         function liveTransformInput(inputEl) {
             const before = inputEl.value;
             const caret = inputEl.selectionStart;
-            let after = before.replace(/r/gi, '√').replace(/p/gi, 'π');
+            let after = before.replace(/r/g, '√').replace(/R/g, '√');
+            let caretShift = 0;
+            after = after.replace(/pi/gi, () => { caretShift++; return 'π'; });
             if (after !== before) {
                 inputEl.value = after;
-                inputEl.setSelectionRange(caret, caret);
+                let piBeforeCaret = 0;
+                const beforeCaret = before.slice(0, caret);
+                const matches = beforeCaret.match(/pi/gi);
+                if (matches) piBeforeCaret = matches.length;
+                inputEl.setSelectionRange(caret - piBeforeCaret, caret - piBeforeCaret);
             }
+        }
+
+        // Custom touch/pointer handler for zero-latency mobile typing
+        function handlePad(e, action, arg) {
+            e.preventDefault(); // Stop double-tap zoom & focus loss
+            
+            const btn = e.currentTarget;
+            btn.classList.add('kp-active');
+            setTimeout(() => btn.classList.remove('kp-active'), 80);
+
+            if (action === 'press') padPress(arg);
+            else if (action === 'back') padBackspace();
+            else if (action === 'submit') submitOpenAnswer();
         }
 
         function padPress(ch) {
@@ -1071,9 +1087,10 @@
             input.value = v.slice(0, start) + ch + v.slice(end);
             const newPos = start + ch.length;
             input.setSelectionRange(newPos, newPos);
-            input.focus();
+            // On mobile, keeping focus prevents the native keyboard from fighting our custom one
+            // inputmode="none" is doing the heavy lifting, but keeping focus keeps the blinking caret visible.
+            if (!isMobileOS) input.focus(); 
         }
-        function padInsertWord(word) { padPress(word); }
         function padBackspace() {
             const input = document.getElementById('open-input');
             if (input.disabled) return;
@@ -1087,7 +1104,7 @@
                 input.value = v.slice(0, start - 1) + v.slice(end);
                 input.setSelectionRange(start - 1, start - 1);
             }
-            input.focus();
+            if (!isMobileOS) input.focus(); 
         }
         function setKeypadLocked(locked) {
             const pad = document.getElementById('open-keypad');
@@ -1228,10 +1245,8 @@
             const generators = { sincos: genSincos, tancot: genTancot, seccsc: genSeccsc, inverse: genInverse };
             let q = generators[topic]();
             
-            // Generate multiple choice options dynamically 
             let pool = graphOptionFamilies.find(f => f.includes(q.correct));
             if (!pool) {
-                // Fallback: If correct answer includes Pi, use the pi family, otherwise numbers
                 if (q.correct.includes('π')) pool = graphOptionFamilies[1];
                 else pool = graphOptionFamilies[0];
             }
@@ -1243,7 +1258,6 @@
                 options.add(opt);
             }
             
-            // Fill any remaining space with completely random choices
             let allOpts = [].concat(...graphOptionFamilies);
             while (options.size < 4) {
                 let randomOpt = allOpts[Math.floor(Math.random() * allOpts.length)];
@@ -1335,7 +1349,7 @@
                     e.preventDefault();
                     btns[idx].click();
                 }
-            } else if ((e.key === 'h' || e.key === 'H') && state.mode === 'unlimited' && answerMode !== 'open') {
+            } else if ((e.key === 'h' || e.key === 'H') && state.mode === 'unlimited' && state.gameType !== 'graph' && answerMode !== 'open') {
                 const trigger = document.querySelector('#hint-area .hint-trigger');
                 if (trigger) {
                     e.preventDefault();
@@ -1352,7 +1366,7 @@
                 return;
             }
             area.classList.remove('hidden');
-            const showHKey = answerMode !== 'open';
+            const showHKey = state.gameType !== 'graph' && answerMode !== 'open';
             const kbdBadge = showHKey ? ' <span class="kbd-key">H</span>' : '';
             area.innerHTML = `<button type="button" class="hint-trigger" onclick="showHint()">💡 Need a hint?${kbdBadge}</button>`;
         }
@@ -1416,7 +1430,7 @@
 
             const grid = document.getElementById('options-grid');
             const openArea = document.getElementById('open-area');
-            const useOpen = answerMode === 'open';
+            const useOpen = (state.gameType === 'graph') || answerMode === 'open';
 
             if (useOpen) {
                 grid.classList.add('hidden');
@@ -1428,14 +1442,16 @@
 
                 if (isMobileOS) {
                     keypadEl.classList.remove('hidden');
-                    metaEl.innerHTML = `Tap the keypad below · or type <span class="text-amber-300 font-bold">r</span> for √, <span class="text-amber-300 font-bold">p</span> for π`;
+                    metaEl.innerHTML = `Tap the keypad below · or type <span class="text-amber-300 font-bold">r</span> for √, <span class="text-amber-300 font-bold">pi</span> for π`;
                 } else {
                     keypadEl.classList.add('hidden');
-                    metaEl.innerHTML = `Type <span class="text-amber-300 font-bold">r</span> for √, <span class="text-amber-300 font-bold">p</span> for π · Press Enter to submit`;
+                    metaEl.innerHTML = `Type <span class="text-amber-300 font-bold">r</span> for √, <span class="text-amber-300 font-bold">pi</span> for π · Press Enter to submit`;
                 }
 
                 input.value = '';
                 input.classList.remove('input-correct', 'input-wrong');
+                input.style.borderColor = '';
+                input.style.backgroundColor = '';
                 input.disabled = false;
                 setKeypadLocked(false);
                 
@@ -1474,21 +1490,37 @@
             if (!raw.trim()) return;
             const isCorrect = answersMatch(raw, state.currentQ.correct);
             recordAnswer(normalizeAnswer(raw), isCorrect);
-            input.classList.add(isCorrect ? 'input-correct' : 'input-wrong');
+            
             input.disabled = true;
             setKeypadLocked(true);
-            if (!isCorrect) {
-                document.getElementById('open-meta').innerHTML = `Correct: <span class="open-correct-reveal">${state.currentQ.correct}</span>`;
+            
+            let delay;
+            
+            if (state.mode === 'unlimited') {
+                input.classList.add(isCorrect ? 'input-correct' : 'input-wrong');
+                if (!isCorrect) {
+                    document.getElementById('open-meta').innerHTML = `Correct: <span class="open-correct-reveal">${state.currentQ.correct}</span>`;
+                }
+                flashAccuracy(isCorrect);
+                delay = isCorrect ? 750 : 1500;
+            } else {
+                // Speed Mode: Neutral visual feedback, short delay
+                input.style.borderColor = 'rgb(56, 189, 248)'; 
+                input.style.backgroundColor = 'rgb(30, 41, 59)';
+                delay = 250;
             }
-            if (state.mode === 'unlimited') flashAccuracy(isCorrect);
-            const delay = isCorrect ? 750 : 1500;
+            
             setTimeout(() => {
                 if (!state.active) return;
                 const stage = document.getElementById('question-stage');
                 stage.classList.remove('stage-enter');
                 void stage.offsetWidth;
                 stage.classList.add('stage-exit');
-                setTimeout(() => renderNextQuestion(), 180);
+                setTimeout(() => {
+                    input.style.borderColor = ''; 
+                    input.style.backgroundColor = '';
+                    renderNextQuestion();
+                }, 180);
             }, delay);
         }
 
@@ -1516,11 +1548,25 @@
             if (state.locked) return;
             const isCorrect = selected === state.currentQ.correct;
             recordAnswer(selected, isCorrect);
+            
             if (state.mode === 'unlimited') {
                 flashAccuracy(isCorrect);
                 showFeedbackThenAdvance(selected, isCorrect);
             } else {
-                renderNextQuestion();
+                // Speed Mode: Neutral feedback, quick advance
+                state.locked = true;
+                btnEl.style.backgroundColor = 'rgb(71, 85, 105)';
+                btnEl.style.borderColor = 'rgb(14, 165, 233)';
+                setTimeout(() => {
+                    if (!state.active) return; 
+                    const stage = document.getElementById('question-stage');
+                    stage.classList.remove('stage-enter');
+                    void stage.offsetWidth;
+                    stage.classList.add('stage-exit');
+                    setTimeout(() => {
+                        renderNextQuestion();
+                    }, 180);
+                }, 250);
             }
         }
 
