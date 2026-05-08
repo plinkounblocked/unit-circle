@@ -5,6 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Unit Circle Practice</title>
     
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-6EFKCVL10Q"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-6EFKCVL10Q');
+    </script>
+
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230f172a'/><circle cx='50' cy='50' r='35' fill='none' stroke='%2364748b' stroke-width='6'/><line x1='15' y1='50' x2='85' y2='50' stroke='%23475569' stroke-width='4'/><line x1='50' y1='15' x2='50' y2='85' stroke='%23475569' stroke-width='4'/><line x1='50' y1='50' x2='74.7' y2='25.3' stroke='%2338bdf8' stroke-width='6' stroke-linecap='round'/><circle cx='74.7' cy='25.3' r='6' fill='%2338bdf8'/></svg>">
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -902,6 +910,15 @@
             state.interval = setInterval(updateTimer, 1000);
             updateTimer();
 
+            // GA4 Event: Start Session
+            gtag('event', 'level_start', {
+                'level_name': mode,
+                'difficulty': currentDifficulty,
+                'angle_unit': angleUnit,
+                'answer_mode': answerMode,
+                'is_drill': !!drillSet
+            });
+
             switchView('game');
             renderNextQuestion();
         }
@@ -1332,6 +1349,14 @@
             state.interval = setInterval(updateTimer, 1000);
             updateTimer();
 
+            // GA4 Event: Start Graph Practice
+            gtag('event', 'level_start', {
+                'level_name': 'graph',
+                'difficulty': currentDifficulty,
+                'angle_unit': angleUnit,
+                'answer_mode': answerMode
+            });
+
             switchView('game');
             renderNextQuestion();
         }
@@ -1373,6 +1398,13 @@
 
         function showHint() {
             if (!state.currentQ) return;
+
+            // GA4 Event: Hint Used
+            gtag('event', 'use_hint', {
+                'question': state.currentQ.text || state.currentQ.qText,
+                'type': state.gameType
+            });
+
             const area = document.getElementById('hint-area');
             let lines, visualBlock = '';
             if (state.gameType === 'graph') {
@@ -1535,6 +1567,17 @@
                 deg: q.deg,
                 topic: q.topic
             });
+
+            // GA4 Event: Track Errors
+            if (!isCorrect) {
+                gtag('event', 'quiz_error', {
+                    'function': q.func || q.topic,
+                    'angle_deg': q.deg,
+                    'user_answer': selectedDisplay,
+                    'correct_answer': q.correct
+                });
+            }
+
             if (isCorrect) {
                 state.streak++;
                 if (state.mode !== 'speed') playCorrect();
@@ -1624,6 +1667,14 @@
             let timeElapsed = state.mode === 'speed' ? (state.targetTime - state.timeTotal) : state.timeTotal;
             if (timeElapsed < 0) timeElapsed = 0;
             let avgTime = (timeElapsed / total).toFixed(1);
+
+            // GA4 Event: End Session
+            gtag('event', 'level_end', {
+                'level_name': state.mode,
+                'score': acc,
+                'total_questions': total,
+                'time_spent_sec': timeElapsed
+            });
 
             document.getElementById('res-score').innerText = `${acc}%`;
             document.getElementById('res-correct').innerText = correct;
@@ -1798,7 +1849,7 @@
             pbEl.innerHTML = `
                 <div class="pb-card bg-slate-900 border border-slate-700 rounded-xl p-3">
                     <div class="flex items-center justify-between mb-1">
-                        <span class="text-slate-400 text-xs font-bold uppercase tracking-wider">Personal Best · ${state.targetCount} Q</span>
+                        <span class="text-slate-400 text-xs font-bold uppercase tracking-wider Personal Best · ${state.targetCount} Q</span>
                         ${(pbTime || pbAcc) ? '<span class="pb-new text-xs">★ NEW</span>' : ''}
                     </div>
                     <div class="flex items-center justify-between text-sm font-mono">
