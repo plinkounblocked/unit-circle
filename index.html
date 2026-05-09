@@ -1049,21 +1049,151 @@
         function degToDegStr(deg) { return `${deg}°`; }
         function formatAngle(deg) { return angleUnit === 'degrees' ? degToDegStr(deg) : degToRadStr(deg); }
 
-        function normalizeAnswer(s) {
+        /* --- Math equivalence engine ---
+           The core insight: every answer in this app is either the literal token "Undefined",
+           or a closed-form expression involving integers, fractions, π, and √n (for small n).
+           Rather than comparing strings (which fails for unsimplified, unrationalized,
+           or decimal forms), we parse each side to a Number and compare numerically with
+           a small epsilon. This handles 2/4 = 1/2, 1/√3 = √3/3, 0.5 = 1/2, 6π/8 = 3π/4, etc.
+
+           normalizeAnswer is kept as a display helper (used in mistake review) and now
+           returns a cleaned string form. answersMatch is the new equivalence check. */
+
+        // Fixed pattern for 'Undefined' / 'DNE' / etc.
+        const UNDEFINED_RE = /^\s*(undefined|und(ef)?|dne|n\/a|none)\s*$/i;
+
+        function isUndefinedToken(s) {
+            return UNDEFINED_RE.test(String(s ?? ''));
+        }
+
+        // Convert input to a canonical "evaluable" string, preserving structure for parsing.
+        function preprocessExpr(s) {
             if (s == null) return '';
             let t = String(s).trim();
-            if (/^undefined$/i.test(t) || /^und(ef)?$/i.test(t) || /^dne$/i.test(t)) return 'Undefined';
-            t = t.replace(/sqrt\s*\(?\s*/gi, '√');
-            t = t.replace(/\)/g, '');
-            t = t.replace(/r/g, '√').replace(/R/g, '√');
-            t = t.replace(/pi/gi, 'π');
-            t = t.replace(/\s+/g, '');
+            // Replace common shorthand
+            t = t.replace(/sqrt\s*\(\s*([0-9.]+)\s*\)/gi, '√$1');  // sqrt(3) → √3
+            t = t.replace(/sqrt\s*([0-9.]+)/gi, '√$1');             // sqrt 3 → √3
+            // 'r' or 'R' as shorthand for √, when followed by a digit, decimal, √, or '('.
+            // Use lookahead instead of \b — there's no word boundary between 'r' and '3'.
+            t = t.replace(/[rR](?=[0-9.√(])/g, '√');
+            t = t.replace(/pi/gi, 'π');                              // pi → π
+            t = t.replace(/\s+/g, '');                                // strip whitespace
             if (t.startsWith('+')) t = t.slice(1);
             return t;
         }
 
+        // Tokenize and evaluate a math expression with support for π, √n, fractions, decimals,
+        // unary minus, parentheses, and implicit multiplication (2π, 3√2, 2(3+1), √3/2).
+        // Returns a Number, or NaN on parse failure.
+        function evalExpr(input) {
+            const s = preprocessExpr(input);
+            if (s === '' || s === '-' || s === '+') return NaN;
+            let i = 0;
+            const peek = () => s[i];
+            const eof = () => i >= s.length;
+
+            // Forward declarations
+            function parseExpr() { return parseAddSub(); }
+
+            function parseAddSub() {
+                let left = parseMulDiv();
+                while (!eof() && (peek() === '+' || peek() === '-')) {
+                    const op = s[i++];
+                    const right = parseMulDiv();
+                    left = (op === '+') ? left + right : left - right;
+                }
+                return left;
+            }
+
+            function parseMulDiv() {
+                let left = parseImplicitMul();
+                while (!eof() && (peek() === '*' || peek() === '/')) {
+                    const op = s[i++];
+                    const right = parseImplicitMul();
+                    left = (op === '*') ? left * right : left / right;
+                }
+                return left;
+            }
+
+            // Handle implicit multiplication: 2π, 3√2, 2(x), π√3, (a)(b)
+            function parseImplicitMul() {
+                let left = parseUnary();
+                while (!eof()) {
+                    const c = peek();
+                    // Implicit multiplication when the next token starts an atom
+                    // (digit, π, √, or '('), and the current value isn't broken
+                    if (c === 'π' || c === '√' || c === '(' ||
+                        (c >= '0' && c <= '9') || c === '.') {
+                        const right = parseUnary();
+                        left = left * right;
+                    } else break;
+                }
+                return left;
+            }
+
+            function parseUnary() {
+                if (peek() === '-') { i++; return -parseUnary(); }
+                if (peek() === '+') { i++; return parseUnary(); }
+                return parseAtom();
+            }
+
+            function parseAtom() {
+                const c = peek();
+                if (c === '(') {
+                    i++;
+                    const v = parseExpr();
+                    if (peek() === ')') i++;
+                    return v;
+                }
+                if (c === 'π') { i++; return Math.PI; }
+                if (c === '√') {
+                    i++;
+                    // √ followed by a digit/decimal or parenthesized expression
+                    const inner = parseAtom();
+                    return Math.sqrt(inner);
+                }
+                // Number (digits and optional decimal)
+                if ((c >= '0' && c <= '9') || c === '.') {
+                    let num = '';
+                    while (!eof() && ((peek() >= '0' && peek() <= '9') || peek() === '.')) {
+                        num += s[i++];
+                    }
+                    return parseFloat(num);
+                }
+                // Unknown character → NaN
+                i = s.length; // halt
+                return NaN;
+            }
+
+            try {
+                const v = parseExpr();
+                if (!eof()) return NaN; // unconsumed input → malformed
+                return v;
+            } catch { return NaN; }
+        }
+
+        // Two values are equivalent if they parse to the same number (within float epsilon).
+        // Special case: "Undefined" only matches "Undefined".
         function answersMatch(userInput, correct) {
-            return normalizeAnswer(userInput) === normalizeAnswer(correct);
+            const userIsUndef = isUndefinedToken(userInput);
+            const corrIsUndef = isUndefinedToken(correct);
+            if (corrIsUndef) return userIsUndef;
+            if (userIsUndef) return false; // user said undefined, but answer is defined
+
+            const u = evalExpr(userInput);
+            const c = evalExpr(correct);
+            if (Number.isNaN(u) || Number.isNaN(c)) return false;
+            // Use relative tolerance for large values, absolute for small
+            const tol = Math.max(1e-9, Math.abs(c) * 1e-9);
+            return Math.abs(u - c) < tol;
+        }
+
+        // Display-form normalization (used by mistake review to show what the user typed).
+        // Less aggressive than the full evaluator — preserves structure.
+        function normalizeAnswer(s) {
+            if (s == null) return '';
+            if (isUndefinedToken(s)) return 'Undefined';
+            return preprocessExpr(s);
         }
 
         function liveTransformInput(inputEl) {
